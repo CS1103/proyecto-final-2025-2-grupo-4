@@ -4,11 +4,12 @@
 #include <filesystem>
 #include <map>
 #include <vector>
-#include <algorithm>
+
 using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
+// 0: Puño, 1: Like, 2: Dislike, 3: Stop, 4: Peace
 map<string, int> folder_map = {
     {"fist", 0},
     {"like", 1},
@@ -17,7 +18,7 @@ map<string, int> folder_map = {
     {"peace", 4}
 };
 
-const int MAX_IMAGES_PER_CLASS = 600; 
+const int MAX_IMAGES_PER_CLASS = 600; // Limite para no saturar
 
 int main() {
     string dataset_root = "C:/Users/arana/Downloads/hagrid-classification-512p"; 
@@ -39,38 +40,33 @@ int main() {
             int label = folder_map[folder_name];
             cout << "Procesando carpeta: " << folder_name << " (Clase " << label << ")..." << endl;
 
-            vector<string> image_paths;
-            for (const auto& img_entry : fs::directory_iterator(entry.path())) {
-                string ext = img_entry.path().extension().string();
-                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png") {
-                    image_paths.push_back(img_entry.path().string());
-                }
-            }
-
             int class_count = 0;
-            for (const auto& path : image_paths) {
+            for (const auto& img_entry : fs::directory_iterator(entry.path())) {
                 if (class_count >= MAX_IMAGES_PER_CLASS) break;
 
-                Mat img = imread(path, IMREAD_GRAYSCALE); 
+                // Solo imagenes
+                string ext = img_entry.path().extension().string();
+                if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") continue;
+
+                Mat img = imread(img_entry.path().string(), IMREAD_GRAYSCALE);
                 if (img.empty()) continue;
 
-                Mat small;
-                resize(img, small, Size(30, 30));
+                // Resize a 30x30
+                Mat img_small;
+                resize(img, img_small, Size(30, 30));
 
                 csv << label;
-                for (int i = 0; i < small.rows; ++i) {
-                    for (int j = 0; j < small.cols; ++j) {
-                        csv << "," << (float)small.at<uchar>(i, j) / 255.0f;
+                for (int i = 0; i < img_small.rows; ++i) {
+                    for (int j = 0; j < img_small.cols; ++j) {
+                        csv << "," << (float)img_small.at<uchar>(i, j) / 255.0f;
                     }
                 }
                 csv << "\n";
                 class_count++;
                 total_count++;
             }
-            cout << " -> Guardadas " << class_count << " imagenes." << endl;
         }
     }
-    cout << "FINALIZADO. Total dataset: " << total_count << " filas." << endl;
-    csv.close();
+    cout << "Listo. Total imagenes: " << total_count << endl;
     return 0;
 }

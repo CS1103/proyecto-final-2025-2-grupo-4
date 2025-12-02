@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <memory>
+#include <iostream>
 #include "nn_interfaces.h" 
 #include "nn_optimizer.h"  
 #include "nn_loss.h"       
@@ -62,7 +63,11 @@ public:
             for (auto& layer : layers_) {
                 layer->update_params(optimizer);
             }
+            float progress = (epoch + 1) * 100.0f / epochs;
+            if ((epoch + 1) % 10 == 0)   // cada 10 epochs
+                std::cout << "\rProgreso: " << progress << "% completado" << std::flush;
         }
+        std::cout << std::endl;
     }
 };
 }
