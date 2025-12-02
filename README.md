@@ -43,7 +43,6 @@
 
    Es crítico compilar en modo **Release** para activar las optimizaciones vectoriales (AVX2) y el paralelismo.
 
-   ```bash
    git clone [https://github.com/TU_USUARIO/celeste-neural-controller.git](https://github.com/TU_USUARIO/celeste-neural-controller.git)
    cd celeste-neural-controller
    mkdir build && cd build
@@ -53,7 +52,6 @@
    
    # Compilar
    cmake --build . --config Release
-````
 
 -----
 
