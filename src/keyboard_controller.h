@@ -9,7 +9,7 @@ private:
     std::map<int, bool> key_state;
 
 public:
-    // Presiona o suelta una tecla según el estado 'pressed'
+    // Presiona o suelta una tecla, estado 'pressed'
     void update_key(int key_code, bool pressed) {
         // Solo enviamos la señal si el estado cambia para no saturar
         if (key_state[key_code] == pressed) return;

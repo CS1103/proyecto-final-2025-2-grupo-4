@@ -12,16 +12,34 @@ utec::neural_network::Tensor<float, 2> mat_to_tensor(const cv::Mat& img) {
     return t;
 }
 
+// Función auxiliar para obtener la clase ganadora
+int get_prediction(utec::neural_network::NeuralNetwork<float>& nn, const cv::Mat& img_crop) {
+    cv::Mat small_img;
+    cv::resize(img_crop, small_img, cv::Size(30, 30));
+    
+    auto output = nn.predict(mat_to_tensor(small_img));
+    
+    int best = 0;
+    float max_p = 0.0f;
+    for(int i=0; i<5; ++i) { // 5 Clases
+        if (output(0, i) > max_p) {
+            max_p = output(0, i);
+            best = i;
+        }
+    }
+    // Si la confianza es baja (< 0.6), retornamos -1 (ninguna acción)
+    return (max_p > 0.6f) ? best : -1;
+}
+
 int main() {
     using namespace std;
     using namespace cv;
 
-    // 1. Cargar Red
+    // 1. Cargar Red (Arquitectura 900 -> 64 -> 5)
     utec::neural_network::NeuralNetwork<float> nn;
     auto l1 = new utec::neural_network::Dense<float>(900, 64, [](auto&){}, [](auto&){});
-    auto l2 = new utec::neural_network::Dense<float>(64, 4, [](auto&){}, [](auto&){});
+    auto l2 = new utec::neural_network::Dense<float>(64, 5, [](auto&){}, [](auto&){});
     
-    // Asegúrate de que estos archivos existan (se crean al correr trainer.exe)
     l1->load_params("celeste_l1");
     l2->load_params("celeste_l2");
 
@@ -30,59 +48,62 @@ int main() {
     nn.add_layer(unique_ptr<utec::neural_network::ILayer<float>>(l2));
     nn.add_layer(make_unique<utec::neural_network::Sigmoid<float>>());
 
-    // 2. Iniciar Sistema
+    // 2. Iniciar
     VideoCapture cap(0);
     KeyboardController kb;
-    
-    // CAMBIO IMPORTANTE: Renombramos 'small' a 'img_small'
-    Mat frame, img_small, gray; 
+    Mat frame, gray;
 
-    cout << "CONTROL NEURONAL ACTIVADO. Presiona ESC para salir." << endl;
+    cout << "SISTEMA DE DOBLE MANO INICIADO." << endl;
 
     while(true) {
         cap >> frame;
         if(frame.empty()) break;
+        
+        flip(frame, frame, 1);
 
-        // Procesar
         cvtColor(frame, gray, COLOR_BGR2GRAY);
+
+        int mid_x = gray.cols / 2;
+=        Rect left_roi(0, 0, mid_x, gray.rows);
+        Rect right_roi(mid_x, 0, mid_x, gray.rows);
+
+        Mat img_left = gray(left_roi);
+        Mat img_right = gray(right_roi);
+
+        // --- PREDICCIONES ---
+        int p_left = get_prediction(nn, img_left);
+        int p_right = get_prediction(nn, img_right);
+
+
+        kb.update_key(VK_RIGHT, (p_left == 1));
+        kb.update_key(VK_LEFT,  (p_left == 2));
+        kb.update_key(VK_UP,    (p_left == 3));
+        kb.update_key(VK_DOWN,  (p_left == 4));
+
+
+        kb.update_key('X', (p_right == 0));
+        kb.update_key('C', (p_right == 3));
+        kb.update_key('Z', (p_right == 4));
+
+
+        // Dibujar línea divisoria
+        line(frame, Point(mid_x, 0), Point(mid_x, frame.rows), Scalar(0, 255, 255), 2);
         
-        // CAMBIO AQUÍ: Usamos img_small
-        resize(gray, img_small, Size(30, 30)); 
-        
-        // CAMBIO AQUÍ: Usamos img_small
-        auto output = nn.predict(mat_to_tensor(img_small));
+        string t_izq = "---";
+        if(p_left == 0) t_izq = "NEUTRO";
+        if(p_left == 1) t_izq = "DER ->";
+        if(p_left == 2) t_izq = "<- IZQ";
+        if(p_left == 3) t_izq = "^ ARR";
+        if(p_left == 4) t_izq = "v ABA";
+        putText(frame, t_izq, Point(50, 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
 
-        // Buscar la clase ganadora (ArgMax)
-        int best_class = 0;
-        float max_prob = 0.0f;
-        
-        for(int i=0; i<4; ++i) {
-            float val = output(0, i);
-            if(val > max_prob) {
-                max_prob = val;
-                best_class = i;
-            }
-        }
+        string t_der = "---";
+        if(p_right == 0) t_der = "DASH (X)";
+        if(p_right == 3) t_der = "SALTAR (C)";
+        if(p_right == 4) t_der = "AGARRAR (Z)";
+        putText(frame, t_der, Point(mid_x + 50, 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
-        if(max_prob < 0.7f) best_class = -1; // -1 significa "ninguno seguro"
-
-        // 3. Mapear a Teclas
-        // Ajusta esto según tus clases (0=Forward, 1=Backwards, etc.)
-        kb.update_key('C',      (best_class == 0)); 
-        kb.update_key('X',      (best_class == 1)); 
-        kb.update_key(VK_LEFT,  (best_class == 2)); 
-        kb.update_key(VK_RIGHT, (best_class == 3)); 
-
-        // UI
-        string txt = "NEUTRAL";
-        if(best_class == 0) txt = "SALTAR";
-        if(best_class == 1) txt = "DASH";
-        if(best_class == 2) txt = "IZQUIERDA";
-        if(best_class == 3) txt = "DERECHA";
-
-        putText(frame, txt, Point(30, 50), FONT_HERSHEY_SIMPLEX, 1.5, Scalar(0,255,0), 3);
-        imshow("Celeste Controller", frame);
-        
+        imshow("Celeste Controller (Split)", frame);
         if(waitKey(1) == 27) break;
     }
     return 0;

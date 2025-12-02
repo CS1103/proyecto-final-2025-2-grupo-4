@@ -372,6 +372,7 @@ Tensor<T, n> matrix_product(const Tensor<T, n>& A, const Tensor<T, n>& B) {
     result.fill(T{});
     //multiplication
     int total_batches = (n > 2) ? batchA : 1;
+    #pragma omp parallel for collapse(2)
     for (int b = 0; b < total_batches; ++b) {
         for (int i = 0; i < Ap; ++i) {
             for (int j = 0; j < Bq; ++j) {

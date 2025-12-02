@@ -3,24 +3,32 @@
 #include <fstream>
 #include <filesystem>
 #include <map>
-
+#include <vector>
+#include <algorithm>
 using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-
 map<string, int> folder_map = {
-    {"forward", 0}, 
-    {"backwards", 1},
-    {"left", 2},
-    {"right", 3}
+    {"fist", 0},
+    {"like", 1},
+    {"dislike", 2},
+    {"stop", 3},
+    {"peace", 4}
 };
 
+const int MAX_IMAGES_PER_CLASS = 600; 
+
 int main() {
-    string dataset_root = "../dataset"; 
+    string dataset_root = "C:/Users/arana/Downloads/hagrid-classification-512p"; 
     
-    ofstream csv("dataset_juego.csv");
-    int count = 0;
+    ofstream csv("celeste_dataset.csv");
+    if (!csv.is_open()) {
+        cerr << "Error: No se pudo crear el archivo csv." << endl;
+        return -1;
+    }
+
+    int total_count = 0;
 
     for (const auto& entry : fs::directory_iterator(dataset_root)) {
         if (entry.is_directory()) {
@@ -29,15 +37,23 @@ int main() {
             if (folder_map.find(folder_name) == folder_map.end()) continue;
 
             int label = folder_map[folder_name];
-            cout << "Procesando " << folder_name << " como clase " << label << "..." << endl;
+            cout << "Procesando carpeta: " << folder_name << " (Clase " << label << ")..." << endl;
 
+            vector<string> image_paths;
             for (const auto& img_entry : fs::directory_iterator(entry.path())) {
-                string path = img_entry.path().string();
-                Mat img = imread(path, IMREAD_GRAYSCALE);
-                
+                string ext = img_entry.path().extension().string();
+                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png") {
+                    image_paths.push_back(img_entry.path().string());
+                }
+            }
+
+            int class_count = 0;
+            for (const auto& path : image_paths) {
+                if (class_count >= MAX_IMAGES_PER_CLASS) break;
+
+                Mat img = imread(path, IMREAD_GRAYSCALE); 
                 if (img.empty()) continue;
 
-                // Redimensionar a 30x30 (900 neuronas)
                 Mat small;
                 resize(img, small, Size(30, 30));
 
@@ -48,10 +64,13 @@ int main() {
                     }
                 }
                 csv << "\n";
-                count++;
+                class_count++;
+                total_count++;
             }
+            cout << " -> Guardadas " << class_count << " imagenes." << endl;
         }
     }
-    cout << "Listo! Generadas " << count << " filas en dataset_juego.csv" << endl;
+    cout << "FINALIZADO. Total dataset: " << total_count << " filas." << endl;
+    csv.close();
     return 0;
 }
