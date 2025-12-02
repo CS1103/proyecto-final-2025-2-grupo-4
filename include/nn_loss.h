@@ -5,7 +5,7 @@
 #ifndef PROG3_NN_FINAL_PROJECT_V2025_01_LOSS_H
 #define PROG3_NN_FINAL_PROJECT_V2025_01_LOSS_H
 #include "nn_interfaces.h"
-
+#include <algorithm>
 namespace utec::neural_network {
 
 template<typename T>

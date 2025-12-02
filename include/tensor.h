@@ -12,6 +12,7 @@
 #include <initializer_list>
 #include <numeric>
 #include <functional>
+#include <string>
 
 namespace utec::algebra {
 

@@ -1,14 +1,10 @@
 #include <opencv2/opencv.hpp>
 #include "../include/neural_network.h"
-#include "keyboard_controller.h"
-
-using namespace cv;
-using namespace utec::neural_network;
-using namespace std;
+#include "keyboard_controller.h" 
 
 // Helper OpenCV -> Tensor
-Tensor<float, 2> mat_to_tensor(const Mat& img) {
-    Tensor<float, 2> t(1, 900);
+utec::neural_network::Tensor<float, 2> mat_to_tensor(const cv::Mat& img) {
+    utec::neural_network::Tensor<float, 2> t(1, 900);
     int idx = 0;
     for(int i=0; i<img.rows; ++i) 
         for(int j=0; j<img.cols; ++j) 
@@ -17,25 +13,31 @@ Tensor<float, 2> mat_to_tensor(const Mat& img) {
 }
 
 int main() {
+    using namespace std;
+    using namespace cv;
+
     // 1. Cargar Red
-    NeuralNetwork<float> nn;
-    auto l1 = new Dense<float>(900, 64, [](auto&){}, [](auto&){});
-    auto l2 = new Dense<float>(64, 4, [](auto&){}, [](auto&){});
+    utec::neural_network::NeuralNetwork<float> nn;
+    auto l1 = new utec::neural_network::Dense<float>(900, 64, [](auto&){}, [](auto&){});
+    auto l2 = new utec::neural_network::Dense<float>(64, 4, [](auto&){}, [](auto&){});
     
+    // Asegúrate de que estos archivos existan (se crean al correr trainer.exe)
     l1->load_params("celeste_l1");
     l2->load_params("celeste_l2");
 
-    nn.add_layer(unique_ptr<ILayer<float>>(l1));
-    nn.add_layer(make_unique<ReLU<float>>());
-    nn.add_layer(unique_ptr<ILayer<float>>(l2));
-    nn.add_layer(make_unique<Sigmoid<float>>());
+    nn.add_layer(unique_ptr<utec::neural_network::ILayer<float>>(l1));
+    nn.add_layer(make_unique<utec::neural_network::ReLU<float>>());
+    nn.add_layer(unique_ptr<utec::neural_network::ILayer<float>>(l2));
+    nn.add_layer(make_unique<utec::neural_network::Sigmoid<float>>());
 
     // 2. Iniciar Sistema
     VideoCapture cap(0);
     KeyboardController kb;
-    Mat frame, small, gray;
+    
+    // CAMBIO IMPORTANTE: Renombramos 'small' a 'img_small'
+    Mat frame, img_small, gray; 
 
-    cout << "Presiona ESC para salir." << endl;
+    cout << "CONTROL NEURONAL ACTIVADO. Presiona ESC para salir." << endl;
 
     while(true) {
         cap >> frame;
@@ -43,12 +45,14 @@ int main() {
 
         // Procesar
         cvtColor(frame, gray, COLOR_BGR2GRAY);
-        resize(gray, small, Size(30, 30));
         
-        // Predecir
-        auto output = nn.predict(mat_to_tensor(small));
+        // CAMBIO AQUÍ: Usamos img_small
+        resize(gray, img_small, Size(30, 30)); 
+        
+        // CAMBIO AQUÍ: Usamos img_small
+        auto output = nn.predict(mat_to_tensor(img_small));
 
-        // Buscar la clase ganadora 
+        // Buscar la clase ganadora (ArgMax)
         int best_class = 0;
         float max_prob = 0.0f;
         
@@ -60,23 +64,24 @@ int main() {
             }
         }
 
-        // Umbral de confianza (si no está seguro, no hace nada)
-        if(max_prob < 0.7f) best_class = 0; 
+        if(max_prob < 0.7f) best_class = -1; // -1 significa "ninguno seguro"
 
-        // 3. Mapear a Teclas (Configuración Celeste)
-        // 0: Nada, 1: Izq, 2: Der, 3: Saltap
-        kb.update_key(VK_LEFT,  (best_class == 1));
-        kb.update_key(VK_RIGHT, (best_class == 2));
-        kb.update_key('C',      (best_class == 3)); 
+        // 3. Mapear a Teclas
+        // Ajusta esto según tus clases (0=Forward, 1=Backwards, etc.)
+        kb.update_key('C',      (best_class == 0)); 
+        kb.update_key('X',      (best_class == 1)); 
+        kb.update_key(VK_LEFT,  (best_class == 2)); 
+        kb.update_key(VK_RIGHT, (best_class == 3)); 
 
         // UI
         string txt = "NEUTRAL";
-        if(best_class == 1) txt = "IZQUIERDA";
-        if(best_class == 2) txt = "DERECHA";
-        if(best_class == 3) txt = "SALTO";
+        if(best_class == 0) txt = "SALTAR";
+        if(best_class == 1) txt = "DASH";
+        if(best_class == 2) txt = "IZQUIERDA";
+        if(best_class == 3) txt = "DERECHA";
 
         putText(frame, txt, Point(30, 50), FONT_HERSHEY_SIMPLEX, 1.5, Scalar(0,255,0), 3);
-        imshow("Celeste ", frame);
+        imshow("Celeste Controller", frame);
         
         if(waitKey(1) == 27) break;
     }

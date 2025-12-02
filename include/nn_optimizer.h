@@ -5,6 +5,7 @@
 #ifndef PROG3_NN_FINAL_PROJECT_V2025_01_OPTIMIZER_H
 #define PROG3_NN_FINAL_PROJECT_V2025_01_OPTIMIZER_H
 #include "nn_interfaces.h"
+#include <map>
 namespace utec::neural_network {
 template<typename T>
 class SGD final : public IOptimizer<T> {

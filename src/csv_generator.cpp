@@ -17,7 +17,7 @@ map<string, int> folder_map = {
 };
 
 int main() {
-    string dataset_root = "../dataset_green"; 
+    string dataset_root = "../dataset"; 
     
     ofstream csv("dataset_juego.csv");
     int count = 0;

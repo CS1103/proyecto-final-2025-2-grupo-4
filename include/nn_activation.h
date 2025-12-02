@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cmath>
 #include "nn_interfaces.h"
-using namespace std;
 namespace utec::neural_network {
 
 template<typename T>
