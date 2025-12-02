@@ -28,7 +28,7 @@
 * **Integrantes**:
 
   * Fabian Arana Espinoza – [20242006] (Arquitectura de la Red Neuronal y Optimización)
-  * Alumno 2 – [Código] (Procesamiento de Imágenes e Integración con Juego)
+  * Marylin Regina Ccolcca Flores – [202420045] (Procesamiento de Imágenes e Integración con Juego)
 
 ---
 
