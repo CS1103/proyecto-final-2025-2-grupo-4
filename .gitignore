@@ -10,6 +10,70 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
+# ---------------------------------
+# 1. Compilación y Build (CMake)
+# ---------------------------------
+build/
+out/
+bin/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.sln
+*.vcxproj
+*.vcxproj.filters
+
+# ---------------------------------
+# 2. Ejecutables y Binarios (Windows)
+# ---------------------------------
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.obj
+*.exp
+
+# ---------------------------------
+# 3. Datos y Datasets (¡Importante!)
+# ---------------------------------
+# Ignoramos los CSV gigantes generados
+*.csv
+
+# Ignoramos carpetas de imágenes si las copiaste al proyecto
+forward/
+backwards/
+left/
+right/
+data/
+dataset/
+
+# ---------------------------------
+# 4. Configuración de IDE (VS Code)
+# ---------------------------------
+.vscode/
+.idea/
+
+# ---------------------------------
+# 5. Sistema Operativo
+# ---------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ---------------------------------
+# 6. Excepciones (Lo que SÍ queremos)
+# ---------------------------------
+# Queremos subir los pesos entrenados para que el profe/usuario
+# pueda usar la app sin tener que entrenar primero.
+# (Como son archivos .txt pequeños, está bien subirlos)
+!*_weights.txt
+!*_bias.txt
+
+# Si tienes un CSV de ejemplo pequeño, puedes forzarlo así:
+# !data/sample.csv
 
 # CLion
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
