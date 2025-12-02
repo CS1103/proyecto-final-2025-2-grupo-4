@@ -28,6 +28,7 @@
 
   * Fabian Arana Espinoza – [20242006] (Arquitectura de la Red Neuronal y Optimización)
   * Marylin Regina Ccolcca Flores – [202420045] (Procesamiento de Imágenes e Integración con Juego)
+  * Christian Estefano Estrada Fiestas - [202420047] (Informe y refinamiento)
 
 ---
 
